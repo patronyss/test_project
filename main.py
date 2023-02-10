@@ -1,226 +1,144 @@
-import random
+import tkinter as tk
+import datebase
+import parse
 
 
-class Human:
-    def __init__(self, name='Human',
-                 job=None, home=None, car=None):
-        self.name = name
-        self.job = job
-        self.home = home
-        self.car = car
-
-        self.money = 100  # Гроші
-        self.gladness = 50  # Щастя
-        self.satiety = 50  # Ситість
-
-    def get_home(self):
-        self.home = House()
-
-    def get_car(self):
-        self.car = Auto(brands_of_car)
-
-    def get_job(self):
-        if self.car.drive():
-            pass
-        else:
-            self.to_repair()
-        self.job = Job(job_list)
-
-    def eat(self):
-        if self.home.food <= 0:
-            self.shopping('food')
-        else:
-            if self.satiety > 100:
-                self.satiety = 100
-            self.satiety += 5
-            self.home.food -= 5
-
-    def work(self):
-        if not self.car.drive():
-            if self.car.fuel < 20:
-                self.shopping('fuel')
-            else:
-                self.to_repair()
-        self.money += self.job.salary
-        self.gladness -= self.job.gladness_less
-        self.satiety -= 4
-
-    def shopping(self, manage):
-        if not self.car.drive:
-            if self.car.fuel < 20:
-                manage = 'fuel'
-            else:
-                self.to_repair()
-        if manage == 'fuel':
-            print('I bought fuel!')
-            self.car.fuel += 100
-            self.money -= 100
-        elif manage == 'food':
-            print('I bought food!')
-            self.home.food += 50
-            self.money -= 50
-        elif manage == 'delicacies':
-            print('Hooray! Delicious!')
-            self.gladness += 10
-            self.satiety += 2
-            self.money -= 15
-
-    def chill(self):
-        self.gladness += 10
-        self.home.mess += 5
-
-    def clean_home(self):
-        self.gladness -= 5
-        self.home.mess = 0
-
-    def to_repair(self):
-        self.car.strength += 10
-        self.money -= 50
-
-    def days_indexes(self, day):
-        day = f'Today the {day} of {self.name} life!'
-        print(f'{day:=^50}')
-        print(f'{self.name} indexes:')
-        print(f'Money - {self.money}')
-        print(f'Gladness - {self.gladness}')
-        print(f'Food - {self.home.food}')
-        print(f'Mess - {self.home.mess}')
-        print(f'Car fuel - {self.car.fuel}')
-        print(f'Car strength - {self.car.strength}')
-
-    def is_alive(self):
-        if self.gladness < 0:
-            print('Depression')
-            return False
-        if self.satiety < 0:
-            print('Dead...')
-            return False
-        if self.money < -500:
-            print('Bankrupt')
-            return False
-
-    def live(self, day):
-        if self.is_alive() == False:
-            return False
-        if self.home == None:
-            print('Settled in the house')
-            self.get_home()
-        if self.car == None:
-            print('I bought new car!')
-            self.get_car()
-        if self.job == None:
-            self.job = self.get_job()
-            print(f'I don`t have a job, I`m going to get {self.job}!')
-        self.days_indexes(day)
-
-        dice = random.randint(1,4) #Кубики
-        if self.satiety < 20:
-            print('I`ll go eat')
-            self.eat()
-        elif self.gladness < 20:
-            if self.home.mess > 15:
-                print('I want to chill, but there is so much mess...')
-                self.clean_home()
-            else:
-                print('Let`s chill!')
-                self.chill()
-        elif self.money < 0:
-            print('Let`s work!')
-            self.work()
-        elif self.car.strength < 15:
-            print('I need to repair my car')
-            self.to_repair()
-        if dice == 1:
-            print('Let`s chill!')
-            self.chill()
-        elif dice == 2:
-            print('Let`s work!')
-            self.work()
-        elif dice == 3:
-            print('Cleaning time!')
-            self.clean_home()
-        elif dice == 4:
-            print('Time for treats!')
-            self.shopping(manage='delicacies')
-
-
-class Auto:
-    def __init__(self, brand_list):
-        self.brand = random.choice(list(brand_list))
-        self.fuel = brand_list[self.brand]['fuel']
-        self.strength = brand_list[self.brand]['strength']
-        self.consumption = brand_list[self.brand]['consumption']
-
-    def drive(self):
-        if self.strength > 0 and self.fuel > self.consumption:
-            self.fuel -= self.consumption  # Авто витрачає пальне
-            self.strength -= 1  # Авто втрачає ХП
-            return True
-        else:
-            print('This car cannot move')
-            return False
-
-
-class House:
+class Root:
     def __init__(self):
-        self.mess = 0
-        self.food = 0
+        self.db = datebase.DateBase()
+        self.parser = parse.Parser()
+        self.active_roots = []
+        self.run()
+
+    def run(self):
+        root = tk.Tk()
+        root.title('The ultimate parser')
+        root.geometry('800x600')
+        root.resizable(False, False)
+        self.active_roots.append('Main')
+
+        add_site_btn = tk.Button(root,
+                                 text='Додати сайт',
+                                 command=self.add_site)
+        search_btn = tk.Button(root,
+                               text='Знайти інформацію',
+                               command=self.search)
+        clear_db_btn = tk.Button(root,
+                                 text='Очистити БД',
+                                 command=self.clear_db)
+        print_db_btn = tk.Button(root,
+                                 text='Список сайтів',
+                                 command=self.print_db)
+
+        add_site_btn.pack()
+        search_btn.pack()
+        clear_db_btn.pack()
+        print_db_btn.pack()
+
+        root.mainloop()
+
+    def clear_db(self):
+        self.db.clear_db()
+
+    def search(self):
+        def delete():
+            self.active_roots.remove('Search')
+            search_root.destroy()
+
+        def start():
+            info = search_entry.get()
+            sites_names = self._get_sites_names(self.db.get_sites())
+            res = dict()
+            for site in sites_names:
+                res[site] = self.parser.parse_count_of_info(site, info)
+            res = dict(sorted(res.items(), key=lambda x: x[1], reverse=True))
+            search_entry.destroy()
+            search_button.destroy()
+            text = ''
+            count = 1
+            for key, value in res.items():
+                text += f'{count}. {key} : {value} \n'
+                count += 1
+
+            result_label.config(text=text)
+            result_label.pack()
 
 
-class Job:
-    def __init__(self, job_list):
-        self.job = random.choice(list(job_list))
-        self.salary = job_list[self.job]['salary']
-        self.gladness_less = job_list[self.job]['gladness_less']
+        if 'Search' not in self.active_roots:
+            search_root = tk.Tk()
+            search_root.title('Пошук')
+            search_root.attributes("-topmost", True)
+            self.active_roots.append('Search')
+            search_root.protocol('WM_DELETE_WINDOW', delete)
+
+            search_entry = tk.Entry(search_root)
+            search_button = tk.Button(search_root,
+                                      text='SEARCH',
+                                      command=start)
+            result_label = tk.Label(search_root)
+
+            search_entry.pack()
+            search_button.pack()
+
+            search_root.mainloop()
+
+    def add_site(self):
+        def delete():
+            self.active_roots.remove('Add_site')
+            add_root.destroy()
+
+        def start():
+            info = site_entry.get()
+            if self.parser.true_response(info):
+                self.db.add_site(info)
+
+        if 'Add_site' not in self.active_roots:
+            add_root = tk.Tk()
+            add_root.title('Додати сайт')
+            self.active_roots.append('Add_site')
+            add_root.protocol('WM_DELETE_WINDOW', delete)
+
+            add_btn = tk.Button(add_root,
+                                text='Додати сайт до БД',
+                                command=start)
+            site_entry = tk.Entry(add_root)
+
+            site_entry.pack()
+            add_btn.pack()
+
+            add_root.mainloop()
+
+    def print_db(self):
+        def delete():
+            self.active_roots.remove('print_db')
+            print_root.destroy()
+
+        if 'print_db' not in self.active_roots:
+            self.active_roots.append('print_db')
+            print_root = tk.Tk()
+            print_root.protocol('WM_DELETE_WINDOW', delete)
+
+            sites_names = self._get_sites_names(self.db.get_sites())
+            text = self._create_sites_list(sites_names)
+
+            label = tk.Label(print_root,
+                             text=text)
+
+            label.pack()
+
+            print_root.mainloop()
+
+    def _get_sites_names(self, db_info: list):
+        return [el[1] for el in db_info]
+
+    def _create_sites_list(self, sites_names: list):
+        text = ''
+        count = 1
+        for el in sites_names:
+            text += f'{count} - {el} \n'
+            count += 1
+        return text
 
 
-brands_of_car = {
-    'BMW': {
-        'fuel': 80,  # Рівень пального
-        'consumption': 15,  # Витрата пального
-        'strength': 100  # Рівень хп авто
-    },
-    'Audi': {
-        'fuel': 110,  # Рівень пального
-        'consumption': 8,  # Витрата пального
-        'strength': 100  # Рівень хп авто
-    },
-    'Ferrari': {
-        'fuel': 150,  # Рівень пального
-        'consumption': 35,  # Витрата пального
-        'strength': 100  # Рівень хп авто
-    },
-    'Volvo': {
-        'fuel': 100,  # Рівень пального
-        'consumption': 8,  # Витрата пального
-        'strength': 100  # Рівень хп авто
-    }
-}
-# brands_of_car = {'марка':{паливо}:число,{витрата палива}:число}
-
-job_list = {
-    'Java developer':
-        {
-            'salary': 50,  # ЗП
-            'gladness_less': 10  # Відток щастя
-        },
-    'Python developer':
-        {
-            'salary': 60,
-            'gladness_less': 5
-        },
-    'C++ developer':
-        {
-            'salary': 70,
-            'gladness_less': 15
-        },
-}
-
-
-nick = Human(name='Nick')
-
-for day in range(1, 8):
-    if nick.live(day) == False:
-        print('Game over!')
-        break
-
+if __name__ == '__main__':
+    Root()
